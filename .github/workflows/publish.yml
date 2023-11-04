@@ -1,0 +1,37 @@
+name: Publish Package to Chocolatey
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  call-workflow:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+
+  build:
+    name: Publish Package to Chocolatey
+    runs-on: windows-2022
+    needs: call-workflow
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Pack mathmini
+        uses: crazy-max/ghaction-chocolatey@v3
+        with:
+          args: pack .\mathmini.nuspec
+
+      - name: Extract version
+        run: |
+          [xml]$xml = Get-Content -Path .\mathmini.nuspec
+          $version = $xml.package.metadata.version
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+        id: extract-version
+
+      - name: Publish mathmini
+        uses: crazy-max/ghaction-chocolatey@v3
+        with:
+          args: push .\mathmini.${{ steps.extract-version.outputs.version }}.nupkg --source https://push.chocolatey.org/ --api-key ${{ secrets.CHOCOLATEY_API_KEY }}

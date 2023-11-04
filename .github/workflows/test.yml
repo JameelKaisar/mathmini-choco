@@ -1,0 +1,37 @@
+name: Test Package
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_call:
+
+jobs:
+  build:
+    name: Test Package
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Pack mathmini
+        uses: crazy-max/ghaction-chocolatey@v3
+        with:
+          args: pack .\mathmini.nuspec
+
+      - name: Install dependencies
+        uses: crazy-max/ghaction-chocolatey@v3
+        with:
+          args: install mingw -y
+
+      - name: Install mathmini
+        uses: crazy-max/ghaction-chocolatey@v3
+        with:
+          args: install mathmini -y --source .
+
+      - name: Uninstall mathmini
+        uses: crazy-max/ghaction-chocolatey@v3
+        with:
+          args: uninstall mathmini -y
